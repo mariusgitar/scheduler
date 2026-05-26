@@ -30,7 +30,7 @@ export default async function WorkshopPage({ params }: PageProps) {
     <main>
       <h1>{workshop.title}</h1>
       <p>{workshop.id}</p>
-      <p>Opprettet: {workshop.created_at}</p>
+      <p>Opprettet: {new Date(workshop.created_at).toLocaleDateString("nb-NO")}</p>
       <p>Planlegger kommer her</p>
     </main>
   )
