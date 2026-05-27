@@ -3,6 +3,8 @@ import { sql } from '../../../lib/db'
 import type { WorkshopRow } from '../../../lib/types'
 import WorkshopPlanner from '../../../components/WorkshopPlanner'
 
+export const revalidate = 0
+
 type PageProps = {
   params: {
     id: string

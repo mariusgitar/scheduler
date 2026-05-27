@@ -3,6 +3,8 @@ import CreateButton from '../components/CreateButton'
 import { sql } from '../lib/db'
 import type { WorkshopRow } from '../lib/types'
 
+export const revalidate = 0
+
 async function getWorkshops() {
   return sql<WorkshopRow>(
     'SELECT id, title, data, created_at, updated_at FROM workshops ORDER BY created_at DESC LIMIT 20'
