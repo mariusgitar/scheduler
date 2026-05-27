@@ -12,6 +12,19 @@ const defaultWorkshopData = {
   bolker: []
 }
 
+export async function GET() {
+  try {
+    const rows = await sql<WorkshopRow>(
+      'SELECT id, title, data, created_at, updated_at FROM workshops ORDER BY created_at DESC LIMIT 20'
+    )
+
+    return NextResponse.json(rows)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as CreateWorkshopBody
