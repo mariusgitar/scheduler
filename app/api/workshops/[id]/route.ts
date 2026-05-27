@@ -38,16 +38,38 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 
   const body = (await request.json()) as UpdateWorkshopBody
+  const hasTitle = body.title !== undefined
+  const hasData = body.data !== undefined
+
+  if (!hasTitle && !hasData) {
+    return NextResponse.json({ error: 'Ingen felter å oppdatere' }, { status: 400 })
+  }
+
+  if (hasTitle && hasData) {
+    const rows = await sql<WorkshopRow>(
+      `UPDATE workshops
+       SET title = $1, data = $2, updated_at = now()
+       WHERE id = $3
+       RETURNING id, title, data, created_at, updated_at`,
+      [body.title, JSON.stringify(body.data), params.id]
+    )
+
+    if (!rows[0]) {
+      return NextResponse.json({ error: 'Ikke funnet' }, { status: 404 })
+    }
+
+    return NextResponse.json(rows[0])
+  }
 
   const updates: string[] = []
   const values: unknown[] = []
 
-  if (body.title !== undefined) {
+  if (hasTitle) {
     values.push(body.title)
     updates.push(`title = $${values.length}`)
   }
 
-  if (body.data !== undefined) {
+  if (hasData) {
     values.push(JSON.stringify(body.data))
     updates.push(`data = $${values.length}::jsonb`)
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import '../app/workshop/[id]/planner.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import type { WorkshopRow } from '../lib/types'
 
@@ -197,8 +197,6 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   const initialRender = useRef(true)
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const payload = useMemo(() => ({ title: state.title, data: { startTime: state.startTime, endTime: state.endTime, bolker: state.bolker } }), [state])
-
   useEffect(() => {
     if (initialRender.current) {
       initialRender.current = false
@@ -211,7 +209,14 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         const response = await fetch(`/api/workshops/${workshop.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            title: state.title,
+            data: {
+              startTime: state.startTime,
+              endTime: state.endTime,
+              bolker: state.bolker,
+            },
+          }),
         })
 
         if (!response.ok) {
@@ -223,13 +228,14 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         savedTimeoutRef.current = setTimeout(() => {
           setSaveStatus('idle')
         }, 2000)
-      } catch {
+      } catch (err) {
+        console.error('Save failed:', err)
         setSaveStatus('error')
       }
     }, 800)
 
     return () => clearTimeout(timeout)
-  }, [payload, workshop.id])
+  }, [state, workshop.id])
 
   useEffect(() => () => {
     if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
