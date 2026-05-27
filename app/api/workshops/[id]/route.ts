@@ -92,3 +92,21 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
   return NextResponse.json(rows[0])
 }
+
+
+export async function DELETE(_: Request, { params }: RouteParams) {
+  if (!uuidPattern.test(params.id)) {
+    return NextResponse.json({ error: 'Ugyldig id' }, { status: 400 })
+  }
+
+  const rows = await sql<{ id: string }>(
+    'DELETE FROM workshops WHERE id = $1 RETURNING id',
+    [params.id]
+  )
+
+  if (!rows[0]) {
+    return NextResponse.json({ error: 'Ikke funnet' }, { status: 404 })
+  }
+
+  return NextResponse.json({ success: true })
+}
