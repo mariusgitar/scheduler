@@ -32,22 +32,32 @@ export default function DeleteButton({ id, title }: DeleteButtonProps) {
 
   if (confirmDelete) {
     return (
-      <span>
-        Slette {title}?{' '}
-        <button type="button" onClick={handleDelete} disabled={isDeleting}>
-          Ja
+      <div className="home-delete-confirm">
+        <button type="button" onClick={handleDelete} disabled={isDeleting} className="home-delete-confirm-delete">
+          Slett
         </button>{' '}
-        /{' '}
-        <button type="button" onClick={() => setConfirmDelete(false)} disabled={isDeleting}>
-          Nei
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(false)}
+          disabled={isDeleting}
+          className="home-delete-confirm-cancel"
+        >
+          Avbryt
         </button>
-      </span>
+      </div>
     )
   }
 
   return (
-    <button type="button" onClick={() => setConfirmDelete(true)} disabled={isDeleting}>
-      Slett
+    <button
+      type="button"
+      onClick={() => setConfirmDelete(true)}
+      disabled={isDeleting}
+      className="home-delete-button"
+      aria-label={`Slett ${title}`}
+      title={`Slett ${title}`}
+    >
+      🗑
     </button>
   )
 }
