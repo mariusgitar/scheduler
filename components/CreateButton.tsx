@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 
 type CreateWorkshopResponse = {
   id: string
@@ -8,11 +8,16 @@ type CreateWorkshopResponse = {
 
 export default function CreateButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [titleInput, setTitleInput] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
-  const handleCreateWorkshop = async () => {
+  const handleCreateWorkshop = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setIsLoading(true)
     setErrorMessage('')
+
+    const title = titleInput.trim() || 'Workshop'
 
     try {
       const response = await fetch('/api/workshops', {
@@ -20,7 +25,7 @@ export default function CreateButton() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ title: 'Workshop' })
+        body: JSON.stringify({ title })
       })
 
       if (!response.ok) {
@@ -40,11 +45,40 @@ export default function CreateButton() {
     }
   }
 
+  const handleOpenForm = () => {
+    setErrorMessage('')
+    setIsFormOpen(true)
+  }
+
+  const handleCancel = () => {
+    setIsFormOpen(false)
+    setTitleInput('')
+    setErrorMessage('')
+  }
+
   return (
     <div>
-      <button type="button" onClick={handleCreateWorkshop} disabled={isLoading}>
-        {isLoading ? 'Oppretter…' : 'Opprett nytt program'}
-      </button>
+      {isFormOpen ? (
+        <form onSubmit={handleCreateWorkshop}>
+          <input
+            type="text"
+            value={titleInput}
+            onChange={(event) => setTitleInput(event.target.value)}
+            placeholder="Navn på workshop…"
+            autoFocus
+          />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Oppretter…' : 'Opprett'}
+          </button>{' '}
+          <button type="button" onClick={handleCancel} disabled={isLoading}>
+            Avbryt
+          </button>
+        </form>
+      ) : (
+        <button type="button" onClick={handleOpenForm}>
+          Opprett nytt program
+        </button>
+      )}
       {errorMessage ? <p>{errorMessage}</p> : null}
     </div>
   )
