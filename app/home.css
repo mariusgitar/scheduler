@@ -58,16 +58,16 @@
 }
 
 .home-create-button {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
+  width: 64px;
+  height: 64px;
+  font-size: 40px;
+  font-weight: 200;
   background: #111;
   color: #fff;
-  font-size: 32px;
-  font-weight: 300;
+  border-radius: 50%;
+  border: none;
   line-height: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -147,12 +147,27 @@
 
 .home-delete-button {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
+  font-size: 11px;
+  font-weight: 600;
   color: #ccc;
   background: transparent;
   border: none;
-  padding: 2px 4px;
   cursor: pointer;
+  padding: 4px 0;
+  transition: color .15s;
+}
+
+.home-delete-button:hover {
+  color: #b91c1c;
+}
+
+.home-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.home-delete-button:disabled:hover {
+  color: #ccc;
 }
 
 .home-delete-confirm {
