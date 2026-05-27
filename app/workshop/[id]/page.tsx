@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { sql } from '../../../lib/db'
 import type { WorkshopRow } from '../../../lib/types'
+import WorkshopPlanner from '../../../components/WorkshopPlanner'
 
 type PageProps = {
   params: {
@@ -26,12 +27,5 @@ export default async function WorkshopPage({ params }: PageProps) {
     notFound()
   }
 
-  return (
-    <main>
-      <h1>{workshop.title}</h1>
-      <p>{workshop.id}</p>
-      <p>Opprettet: {new Date(workshop.created_at).toLocaleDateString("nb-NO")}</p>
-      <p>Planlegger kommer her</p>
-    </main>
-  )
+  return <WorkshopPlanner workshop={workshop} />
 }
