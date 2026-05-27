@@ -21,7 +21,7 @@ export async function GET(_: Request, { params }: RouteParams) {
   }
 
   const rows = await sql<WorkshopRow>(
-    'SELECT id, title, data, created_at, updated_at FROM workshops WHERE id = $1',
+    'SELECT id, title, data, owner_id, read_token, created_at, updated_at FROM workshops WHERE id = $1',
     [params.id]
   )
 
@@ -50,7 +50,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       `UPDATE workshops
        SET title = $1, data = $2, updated_at = now()
        WHERE id = $3
-       RETURNING id, title, data, created_at, updated_at`,
+       RETURNING id, title, data, owner_id, read_token, created_at, updated_at`,
       [body.title, JSON.stringify(body.data), params.id]
     )
 
@@ -82,7 +82,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     `UPDATE workshops
      SET ${updates.join(', ')}
      WHERE id = $${values.length}
-     RETURNING id, title, data, created_at, updated_at`,
+     RETURNING id, title, data, owner_id, read_token, created_at, updated_at`,
     values
   )
 

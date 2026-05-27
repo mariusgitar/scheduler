@@ -15,7 +15,7 @@ const defaultWorkshopData = {
 export async function GET() {
   try {
     const rows = await sql<WorkshopRow>(
-      'SELECT id, title, data, created_at, updated_at FROM workshops ORDER BY created_at DESC LIMIT 20'
+      'SELECT id, title, data, owner_id, read_token, created_at, updated_at FROM workshops ORDER BY created_at DESC LIMIT 20'
     )
 
     return NextResponse.json(rows)
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : 'Workshop'
 
     const rows = await sql<WorkshopRow>(
-      'INSERT INTO workshops (title, data) VALUES ($1, $2::jsonb) RETURNING id, title, data, created_at, updated_at',
+      'INSERT INTO workshops (title, data) VALUES ($1, $2::jsonb) RETURNING *',
       [title, JSON.stringify(defaultWorkshopData)]
     )
 
