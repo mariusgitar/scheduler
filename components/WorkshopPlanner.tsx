@@ -280,8 +280,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   function handleBackToPrograms() {
     isNavigating.current = true
-    router.refresh()
-    router.push('/')
+    window.location.href = '/'
   }
 
   const withSlots = computeSlots(state.bolker, state.startTime)
