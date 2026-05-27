@@ -13,8 +13,8 @@
 
 .home-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -55,6 +55,22 @@
   border-radius: 999px;
   padding: 8px 14px;
   cursor: pointer;
+}
+
+.home-create-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .home-header > div:last-child form {
@@ -129,14 +145,38 @@
   align-items: flex-start;
 }
 
-.home-card-actions button {
+.home-delete-button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  color: #ccc;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.home-delete-confirm {
+  display: flex;
+  gap: 8px;
+}
+
+.home-delete-confirm-delete,
+.home-delete-confirm-cancel {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: #999;
-  background: transparent;
-  border: 1px solid #e5e5e5;
-  border-radius: 999px;
-  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
   cursor: pointer;
+}
+
+.home-delete-confirm-delete {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.home-delete-confirm-cancel {
+  background: #f0f0f0;
+  color: #555;
 }

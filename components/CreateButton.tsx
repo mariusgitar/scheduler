@@ -75,8 +75,8 @@ export default function CreateButton() {
           </button>
         </form>
       ) : (
-        <button type="button" onClick={handleOpenForm}>
-          Opprett nytt program
+        <button type="button" onClick={handleOpenForm} className="home-create-button">
+          +
         </button>
       )}
       {errorMessage ? <p>{errorMessage}</p> : null}
