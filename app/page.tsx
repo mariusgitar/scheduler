@@ -4,6 +4,7 @@ import DeleteButton from '../components/DeleteButton'
 import { sql } from '../lib/db'
 import AuthButton from '../components/AuthButton'
 import type { WorkshopRow } from '../lib/types'
+import { auth } from '@/auth'
 
 export const revalidate = 0
 
@@ -11,9 +12,10 @@ type WorkshopData = {
   bolker?: unknown[]
 }
 
-async function getWorkshops() {
+async function getWorkshops(userId: string) {
   return sql<WorkshopRow>(
-    'SELECT id, title, data, created_at, updated_at FROM workshops ORDER BY created_at DESC LIMIT 20'
+    'SELECT id, title, data, created_at, updated_at FROM workshops WHERE owner_id = $1 ORDER BY created_at DESC LIMIT 20',
+    [userId]
   )
 }
 
@@ -24,7 +26,9 @@ function getBolkCount(data: object) {
 }
 
 export default async function Page() {
-  const workshops = await getWorkshops()
+  const session = await auth()
+  const userId = session?.user?.id
+  const workshops = userId ? await getWorkshops(userId) : []
 
   return (
     <main className="home-shell">
@@ -34,12 +38,12 @@ export default async function Page() {
             <div className="home-tag">Workshop Agenda</div>
             <h1 className="home-title">Workshop Agenda</h1>
           </div>
-          <CreateButton />
+          {userId ? <CreateButton /> : null}
         </header>
 
         <AuthButton />
 
-        {workshops.length === 0 ? (
+        {!userId ? null : workshops.length === 0 ? (
           <p className="home-empty">Ingen programmer ennå</p>
         ) : (
           <ul className="home-list">
