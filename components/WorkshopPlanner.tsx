@@ -187,8 +187,20 @@ function BolkCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps }: B
 }
 
 export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow }) {
+  function parseData(raw: unknown): Partial<PlannerData> {
+    if (!raw) return {}
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return {}
+      }
+    }
+    return raw as Partial<PlannerData>
+  }
+
   const router = useRouter()
-  const initialData = (workshop.data ?? {}) as Partial<PlannerData>
+  const initialData = parseData(workshop.data)
   const [state, setState] = useState<PlannerState>(() => ({
     title: workshop.title,
     startTime: initialData.startTime || DEFAULT_DATA.startTime,
