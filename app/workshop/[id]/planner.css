@@ -4,6 +4,12 @@
 .app { max-width: 480px; margin: 0 auto; padding: 40px 20px 80px; }
 .save-status { text-align: center; font-size: 12px; font-weight: 500; color: #888; min-height: 20px; margin-bottom: 12px; }
 .save-status.error { color: #b91c1c; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.back-link { font-size: 12px; font-weight: 500; color: #888; text-decoration: none; transition: color .15s; }
+.back-link:hover { color: #111; }
+.share-btn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600; color: #888; background: #fff; border: 1px solid #e0e0e0; border-radius: 100px; padding: 5px 12px; cursor: pointer; transition: all .15s; }
+.share-btn:hover { border-color: #111; color: #111; }
+.share-btn.copied { color: #15803d; border-color: #15803d; }
 .tag { display: inline-block; background: #111; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; margin-bottom: 12px; }
 .title-input { font-size: 30px; font-weight: 800; line-height: 1.1; background: transparent; border: none; outline: none; color: #111; width: 100%; margin-bottom: 28px; }
 .title-input::placeholder { color: #ccc; }
