@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '../../../../lib/db'
 import type { WorkshopRow } from '../../../../lib/types'
+import { auth } from '@/auth'
 
 type RouteParams = {
   params: {
@@ -16,6 +17,12 @@ type UpdateWorkshopBody = {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(_: Request, { params }: RouteParams) {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
+  }
+
   if (!uuidPattern.test(params.id)) {
     return NextResponse.json({ error: 'Ugyldig id' }, { status: 400 })
   }
@@ -33,6 +40,12 @@ export async function GET(_: Request, { params }: RouteParams) {
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
+  }
+
   if (!uuidPattern.test(params.id)) {
     return NextResponse.json({ error: 'Ugyldig id' }, { status: 400 })
   }
