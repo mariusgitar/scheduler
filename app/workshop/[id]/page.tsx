@@ -19,7 +19,7 @@ export default async function WorkshopPage({ params }: PageProps) {
   }
 
   const rows = await sql<WorkshopRow>(
-    'SELECT id, title, data, created_at, updated_at FROM workshops WHERE id = $1',
+    'SELECT * FROM workshops WHERE id = $1',
     [params.id]
   )
 

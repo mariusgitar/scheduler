@@ -1,7 +1,7 @@
 'use client'
 
 import '../app/workshop/[id]/planner.css'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PointerEvent } from 'react'
 import type { WorkshopRow } from '../lib/types'
@@ -198,14 +198,27 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [shareLabel, setShareLabel] = useState('Del lenke')
   const initialRender = useRef(true)
+  const isNavigating = useRef(false)
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shareTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const savePayload = useMemo(
+    () => ({
+      title: state.title,
+      data: {
+        startTime: state.startTime,
+        endTime: state.endTime,
+        bolker: state.bolker,
+      },
+    }),
+    [state.title, state.startTime, state.endTime, state.bolker]
+  )
 
   useEffect(() => {
     if (initialRender.current) {
       initialRender.current = false
       return
     }
+    if (isNavigating.current) return
 
     const timeout = setTimeout(async () => {
       setSaveStatus('saving')
@@ -213,14 +226,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         const response = await fetch(`/api/workshops/${workshop.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: state.title,
-            data: {
-              startTime: state.startTime,
-              endTime: state.endTime,
-              bolker: state.bolker,
-            },
-          }),
+          body: JSON.stringify(savePayload),
         })
 
         if (!response.ok) {
@@ -239,7 +245,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     }, 800)
 
     return () => clearTimeout(timeout)
-  }, [state, workshop.id])
+  }, [savePayload, workshop.id])
 
   useEffect(() => () => {
     if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
@@ -261,6 +267,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   }
 
   function handleBackToPrograms() {
+    isNavigating.current = true
     router.refresh()
     router.push('/')
   }
