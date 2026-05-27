@@ -2,6 +2,7 @@ import Link from 'next/link'
 import CreateButton from '../components/CreateButton'
 import DeleteButton from '../components/DeleteButton'
 import { sql } from '../lib/db'
+import AuthButton from '../components/AuthButton'
 import type { WorkshopRow } from '../lib/types'
 
 export const revalidate = 0
@@ -35,6 +36,8 @@ export default async function Page() {
           </div>
           <CreateButton />
         </header>
+
+        <AuthButton />
 
         {workshops.length === 0 ? (
           <p className="home-empty">Ingen programmer ennå</p>

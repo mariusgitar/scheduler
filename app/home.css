@@ -195,3 +195,41 @@
   background: #f0f0f0;
   color: #555;
 }
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.signin-btn {
+  background: #111;
+  color: #fff;
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+}
+
+.user-info {
+  color: #888;
+  font-size: 13px;
+}
+
+.signout-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color .15s;
+}
+
+.signout-btn:hover {
+  color: #111;
+}
