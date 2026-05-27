@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import CreateButton from '../components/CreateButton'
+import DeleteButton from '../components/DeleteButton'
 import { sql } from '../lib/db'
 import type { WorkshopRow } from '../lib/types'
 
@@ -27,7 +28,8 @@ export default async function Page() {
         <ul>
           {workshops.map((w) => (
             <li key={w.id}>
-              <Link href={`/workshop/${w.id}`}>{w.title}</Link>
+              <Link href={`/workshop/${w.id}`}>{w.title}</Link>{' '}
+              <DeleteButton id={w.id} title={w.title} />
               <p>{new Date(w.created_at).toLocaleDateString('nb-NO')}</p>
             </li>
           ))}
