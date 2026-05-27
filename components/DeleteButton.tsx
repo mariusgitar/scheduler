@@ -57,7 +57,7 @@ export default function DeleteButton({ id, title }: DeleteButtonProps) {
       aria-label={`Slett ${title}`}
       title={`Slett ${title}`}
     >
-      🗑
+      Slett
     </button>
   )
 }
