@@ -3,7 +3,7 @@
 import '../app/workshop/[id]/planner.css'
 import type { WorkshopRow } from '../lib/types'
 
-type BolkType = 'activity' | 'pause' | 'info'
+type BolkType = 'activity' | 'pause' | 'info' | 'section'
 
 type Bolk = {
   id: string
@@ -30,11 +30,36 @@ function formatTime(totalMin: number) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
+function computeSectionDurations(bolker: Bolk[]): Record<string, number> {
+  const result: Record<string, number> = {}
+  let currentSectionId: string | null = null
+  for (const b of bolker) {
+    if (b.type === 'section') {
+      currentSectionId = b.id
+      result[b.id] = 0
+    } else if (currentSectionId) {
+      result[currentSectionId] += b.duration
+    }
+  }
+  return result
+}
+
+function getParentSection(bolker: Bolk[], bolkId: string) {
+  let currentSectionId: string | null = null
+  for (const b of bolker) {
+    if (b.type === 'section') currentSectionId = b.id
+    if (b.id === bolkId) return b.type === 'section' ? null : currentSectionId
+  }
+  return null
+}
+
 function computeSlots(bolker: Bolk[], startTime: string) {
+  const sectionDurations = computeSectionDurations(bolker)
   let cursor = parseTime(startTime)
   return bolker.map((b) => {
     const start = cursor
-    cursor += b.duration
+    const duration = b.type === 'section' ? sectionDurations[b.id] || 0 : b.duration
+    cursor += duration
     return { ...b, startMin: start, endMin: cursor }
   })
 }
@@ -43,6 +68,7 @@ const TYPE_STYLE: Record<BolkType, { bg: string; border: string; chip: string; c
   activity: { bg: '#fff', border: '#e8e8e8', chip: '#111', chipText: '#fff', bar: '#111' },
   pause: { bg: '#FFF8EE', border: '#F5D9A8', chip: '#E07A00', chipText: '#fff', bar: '#E07A00' },
   info: { bg: '#EEF4FF', border: '#BAD0FB', chip: '#2563EB', chipText: '#fff', bar: '#2563EB' },
+  section: { bg: '#F8F8F8', border: '#d0d0d0', chip: '#555', chipText: '#fff', bar: '#555' },
 }
 
 const DEFAULT_DATA: PlannerData = {
@@ -69,6 +95,7 @@ export default function WorkshopViewer({ workshop }: { workshop: WorkshopRow }) 
   const endTime = initialData.endTime || DEFAULT_DATA.endTime
   const bolker = Array.isArray(initialData.bolker) ? (initialData.bolker as Bolk[]) : DEFAULT_DATA.bolker
   const slots = computeSlots(bolker, startTime)
+  const sectionDurations = computeSectionDurations(bolker)
 
   return (
     <div className="planner-shell">
@@ -81,9 +108,21 @@ export default function WorkshopViewer({ workshop }: { workshop: WorkshopRow }) 
 
       <div className="cards">
         {slots.map((bolk) => {
+          if (bolk.type === 'section') {
+            return (
+              <div key={bolk.id} className="card section-card">
+                <div className="section-inner">
+                  <div className="section-name" style={{ pointerEvents: 'none' }}>{bolk.title}</div>
+                  <div className="section-duration">{sectionDurations[bolk.id] || 0} min totalt</div>
+                </div>
+              </div>
+            )
+          }
+
           const s = TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
+          const isIndented = !!getParentSection(bolker, bolk.id)
           return (
-            <div key={bolk.id} className="card" style={{ background: s.bg, borderColor: s.border }}>
+            <div key={bolk.id} className={`card${isIndented ? ' indented' : ''}`} style={{ background: s.bg, borderColor: s.border }}>
               <div className="card-inner">
                 <div className="card-top">
                   <span className="time-chip" style={{ background: s.chip, color: s.chipText }}>{formatTime(bolk.startMin)}</span>
