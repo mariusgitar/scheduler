@@ -55,6 +55,15 @@ function computeSectionDurations(
   return result
 }
 
+function getParentSection(bolker: Bolk[], bolkId: string) {
+  let currentSectionId: string | null = null
+  for (const b of bolker) {
+    if (b.type === 'section') currentSectionId = b.id
+    if (b.id === bolkId) return b.type === 'section' ? null : currentSectionId
+  }
+  return null
+}
+
 function computeSlots(bolker: Bolk[], startTime: string) {
   const sectionDurations = computeSectionDurations(bolker)
   let cursor = parseTime(startTime)
@@ -156,6 +165,7 @@ function useDragSort(items: Bolk[], onReorder: (next: Bolk[]) => void) {
 
 type BolkCardProps = {
   bolk: Bolk & { startMin: number; endMin: number }
+  isIndented?: boolean
   onUpdate: (id: string, patch: Partial<Bolk>) => void
   onDelete: (id: string) => void
   isDragging: boolean
@@ -163,14 +173,14 @@ type BolkCardProps = {
   gripProps: ReturnType<typeof useDragSort>['gripProps'] extends (idx: number) => infer R ? R : never
 }
 
-function BolkCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps }: BolkCardProps) {
+function BolkCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps, isIndented }: BolkCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const s = TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
   const type = bolk.type || 'activity'
 
   return (
-    <div className={`card${isDragging ? ' dragging' : ''}${isOver ? ' over' : ''}`} style={{ background: s.bg, borderColor: s.border }}>
+    <div className={`card${isIndented ? ' indented' : ''}${isDragging ? ' dragging' : ''}${isOver ? ' over' : ''}`} style={{ background: s.bg, borderColor: s.border }}>
       <div className="card-inner">
         <div className="card-top">
           <span className="time-chip" style={{ background: s.chip, color: s.chipText }}>{formatTime(bolk.startMin)}</span>
@@ -200,6 +210,41 @@ function BolkCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps }: B
         {expanded && <textarea className="bolk-notes" value={bolk.notes} onChange={(e) => onUpdate(bolk.id, { notes: e.target.value })} placeholder="Notater om bolken…" rows={3} />}
       </div>
       <div className="dur-bar"><div className="dur-bar-fill" style={{ width: `${Math.min(100, (bolk.duration / 120) * 100)}%`, background: s.bar }} /></div>
+    </div>
+  )
+}
+
+
+
+type SectionCardProps = {
+  bolk: Bolk
+  onUpdate: (id: string, patch: Partial<Bolk>) => void
+  onDelete: (id: string) => void
+  isDragging: boolean
+  isOver: boolean
+  gripProps: ReturnType<typeof useDragSort>['gripProps'] extends (idx: number) => infer R ? R : never
+  totalDuration: number
+}
+
+function SectionCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps, totalDuration }: SectionCardProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  return (
+    <div className={`card section-card${isDragging ? ' dragging' : ''}${isOver ? ' over' : ''}`}>
+      <div className="section-inner">
+        <div className="grip" aria-label="Flytt seksjon" {...gripProps}>
+          <svg width="12" height="18" viewBox="0 0 12 18" fill="none">{[0, 6, 12].map((y) => [0, 6].map((x) => <circle key={`${x}${y}`} cx={x + 3} cy={y + 3} r="2" fill="currentColor" />))}</svg>
+        </div>
+        <input className="section-name" value={bolk.title} onChange={(e) => onUpdate(bolk.id, { title: e.target.value })} placeholder="Seksjonsnavn…" />
+        <div className="section-duration">{totalDuration} min totalt</div>
+        {confirmDelete ? (
+          <div className="del-confirm"><span className="del-confirm-label">Slette?</span><button className="del-yes" onClick={() => onDelete(bolk.id)}>Ja</button><button className="del-no" onClick={() => setConfirmDelete(false)}>Nei</button></div>
+        ) : (
+          <button className="del-btn" aria-label="Slett seksjon" onClick={() => setConfirmDelete(true)}>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 1l9 9M10 1L1 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -316,7 +361,8 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   }
 
   const withSlots = computeSlots(state.bolker, state.startTime)
-  const totalUsed = state.bolker.reduce((s, b) => s + b.duration, 0)
+  const sectionDurations = computeSectionDurations(state.bolker)
+  const totalUsed = state.bolker.reduce((sum, b) => sum + b.duration, 0)
   const totalAvail = parseTime(state.endTime) > parseTime(state.startTime) ? parseTime(state.endTime) - parseTime(state.startTime) : 0
   const overflow = totalUsed > totalAvail
   const diff = Math.abs(totalUsed - totalAvail)
@@ -324,5 +370,5 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => <div key={bolk.id} ref={(el) => setRef(el, idx)}><BolkCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0 } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} /></div>)}</div><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section' } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0 } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
 }

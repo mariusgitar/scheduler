@@ -75,3 +75,49 @@
 .footer { margin-top: 32px; display: flex; justify-content: center; }
 .reset-btn { background: none; border: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #ccc; transition: color .15s; }
 .reset-btn:hover { color: #b91c1c; }
+
+.add-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 0;
+}
+.add-btns .add-btn {
+  flex: 1;
+}
+.section-card {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #d0d0d0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.section-card:hover {
+  box-shadow: none;
+}
+.section-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+}
+.section-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #555;
+  border: none;
+  background: transparent;
+  outline: none;
+  flex: 1;
+}
+.section-duration {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+}
+.card.indented {
+  margin-left: 12px;
+  border-left: 2px solid #e8e8e8;
+}
