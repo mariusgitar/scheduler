@@ -7,3 +7,6 @@ export type WorkshopRow = {
   created_at: string
   updated_at: string
 }
+
+
+export type BolkType = 'activity' | 'pause' | 'info' | 'section'

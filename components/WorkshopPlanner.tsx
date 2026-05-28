@@ -4,9 +4,7 @@ import '../app/workshop/[id]/planner.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PointerEvent } from 'react'
-import type { WorkshopRow } from '../lib/types'
-
-type BolkType = 'activity' | 'pause' | 'info'
+import type { BolkType, WorkshopRow } from '../lib/types'
 
 type Bolk = {
   id: string
@@ -41,11 +39,29 @@ function uid() {
   return Math.random().toString(36).slice(2, 9)
 }
 
+function computeSectionDurations(
+  bolker: Bolk[]
+): Record<string, number> {
+  const result: Record<string, number> = {}
+  let currentSectionId: string | null = null
+  for (const b of bolker) {
+    if (b.type === 'section') {
+      currentSectionId = b.id
+      result[b.id] = 0
+    } else if (currentSectionId) {
+      result[currentSectionId] += b.duration
+    }
+  }
+  return result
+}
+
 function computeSlots(bolker: Bolk[], startTime: string) {
+  const sectionDurations = computeSectionDurations(bolker)
   let cursor = parseTime(startTime)
   return bolker.map((b) => {
     const start = cursor
-    cursor += b.duration
+    const duration = b.type === 'section' ? sectionDurations[b.id] || 0 : b.duration
+    cursor += duration
     return { ...b, startMin: start, endMin: cursor }
   })
 }
@@ -54,12 +70,14 @@ const TYPES: Array<{ value: BolkType; label: string }> = [
   { value: 'activity', label: 'Aktivitet' },
   { value: 'pause', label: 'Pause' },
   { value: 'info', label: 'Info' },
+  { value: 'section', label: 'Seksjon' },
 ]
 
 const TYPE_STYLE: Record<BolkType, { bg: string; border: string; chip: string; chipText: string; bar: string }> = {
   activity: { bg: '#fff', border: '#e8e8e8', chip: '#111', chipText: '#fff', bar: '#111' },
   pause: { bg: '#FFF8EE', border: '#F5D9A8', chip: '#E07A00', chipText: '#fff', bar: '#E07A00' },
   info: { bg: '#EEF4FF', border: '#BAD0FB', chip: '#2563EB', chipText: '#fff', bar: '#2563EB' },
+  section: { bg: '#F8F8F8', border: '#d0d0d0', chip: '#555', chipText: '#fff', bar: '#555' },
 }
 
 const DEFAULT_DATA: PlannerData = {
@@ -162,7 +180,7 @@ function BolkCard({ bolk, onUpdate, onDelete, isDragging, isOver, gripProps }: B
           </div>
         </div>
         <div className="card-bottom">
-          <div className="type-tabs">{TYPES.map((t) => <button key={t.value} className={`type-tab${type === t.value ? ' active' : ''}`} style={type === t.value ? { background: s.chip, color: s.chipText, borderColor: s.chip } : {}} onClick={() => onUpdate(bolk.id, { type: t.value })}>{t.label}</button>)}</div>
+          <div className="type-tabs">{TYPES.map((t) => <button key={t.value} className={`type-tab${type === t.value ? ' active' : ''}`} style={type === t.value ? { background: s.chip, color: s.chipText, borderColor: s.chip } : {}} onClick={() => onUpdate(bolk.id, t.value === 'section' ? { type: t.value, duration: 0 } : { type: t.value })}>{t.label}</button>)}</div>
           <div className="card-actions">
             <div className="dur-pill">
               <button className="dur-btn" onClick={() => onUpdate(bolk.id, { duration: Math.max(5, bolk.duration - 5) })}>−</button>
@@ -306,5 +324,5 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => <div key={bolk.id} ref={(el) => setRef(el, idx)}><BolkCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => (b.id === id ? { ...b, ...patch } : b)) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} /></div>)}</div><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => <div key={bolk.id} ref={(el) => setRef(el, idx)}><BolkCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0 } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} /></div>)}</div><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
 }
