@@ -6,8 +6,8 @@
 .save-status.error { color: #b91c1c; }
 .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .share-btns { display: flex; gap: 6px; }
-.back-link { font-size: 12px; font-weight: 500; color: #888; text-decoration: none; transition: color .15s; }
-.back-link:hover { color: #111; }
+.logo-pill { display: inline-block; background: #111; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; border: none; cursor: pointer; transition: opacity .15s; font-family: 'Plus Jakarta Sans', sans-serif; }
+.logo-pill:hover { opacity: .75; }
 .share-btn { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600; color: #888; background: #fff; border: 1px solid #e0e0e0; border-radius: 100px; padding: 5px 12px; cursor: pointer; transition: all .15s; }
 .share-btn:hover { border-color: #111; color: #111; }
 .share-btn.copied { color: #15803d; border-color: #15803d; }
