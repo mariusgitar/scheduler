@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.viewer-shell {
+  color-scheme: light;
+  background: #F2F1EE;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #111;
+}
+.viewer-app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+.viewer-eyebrow {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: #888; margin-bottom: 8px;
+}
+.viewer-title {
+  font-size: 30px; font-weight: 800;
+  line-height: 1.1; color: #111;
+  margin-bottom: 4px;
+}
+.viewer-time {
+  font-size: 13px; color: #888;
+  font-weight: 500; margin-bottom: 28px;
+}
+.viewer-sec-head {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.viewer-sec-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: #888;
+}
+.viewer-cards {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.viewer-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.viewer-card.indented {
+  margin-left: 12px;
+  border-left: 2px solid #e8e8e8;
+}
+.viewer-card-inner {
+  padding: 14px 16px 12px;
+}
+.viewer-card-top {
+  display: flex; align-items: center; gap: 10px;
+}
+.viewer-time-chip {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 100px;
+  white-space: nowrap; flex-shrink: 0;
+  letter-spacing: .02em;
+}
+.viewer-card-title {
+  font-size: 16px; font-weight: 700; color: #111;
+}
+.viewer-card-duration {
+  margin-left: auto;
+  font-size: 12px; font-weight: 500; color: #aaa;
+  white-space: nowrap;
+}
+.viewer-notes {
+  font-size: 13px; line-height: 1.6; color: #666;
+  margin-top: 8px; border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+}
+.viewer-dur-bar { height: 3px; background: rgba(0,0,0,.06); }
+.viewer-dur-fill {
+  height: 100%; border-radius: 0 2px 2px 0;
+  transition: width .3s;
+}
+.viewer-section {
+  border: none; border-bottom: 1px solid #d0d0d0;
+  border-radius: 0; background: transparent;
+  box-shadow: none; margin-top: 8px;
+}
+.viewer-section-inner {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px;
+}
+.viewer-section-name {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: #555;
+  overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; flex: 1;
+}
+.viewer-section-duration {
+  font-size: 11px; color: #888; white-space: nowrap;
+  margin-left: 8px;
+}
+.viewer-powered {
+  text-align: center; font-size: 11px;
+  color: #bbb; margin-top: 48px;
+  letter-spacing: .06em;
+}
