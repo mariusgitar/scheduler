@@ -46,7 +46,7 @@
 .grip { flex-shrink: 0; padding: 6px; margin: -6px; color: #ccc; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: color .15s, background .15s; }
 .grip:hover { color: #666; background: rgba(0,0,0,.05); }
 .card-bottom { display: flex; flex-direction: column; gap: 8px; }
-.type-tabs { display: flex; gap: 4px; }
+.type-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
 .type-tab { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px; border: 1px solid #e0e0e0; background: transparent; color: #888; cursor: pointer; transition: all .15s; }
 .type-tab:hover { border-color: #aaa; color: #333; }
 .card-actions { display: flex; align-items: center; gap: 10px; }
@@ -120,4 +120,70 @@
 .card.indented {
   margin-left: 12px;
   border-left: 2px solid #e8e8e8;
+}
+.cat-manager { margin-bottom: 20px; }
+.cat-manager-toggle {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: #888; background: none; border: none;
+  cursor: pointer; padding: 0;
+  transition: color .15s;
+}
+.cat-manager-toggle:hover { color: #111; }
+.cat-list {
+  display: flex; flex-wrap: wrap;
+  gap: 6px; margin: 10px 0;
+}
+.cat-pill {
+  display: flex; align-items: center;
+  gap: 6px; background: #f5f5f5;
+  border-radius: 100px; padding: 4px 10px;
+  font-size: 12px; font-weight: 600;
+}
+.cat-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.cat-del {
+  background: none; border: none;
+  cursor: pointer; color: #ccc;
+  font-size: 11px; padding: 0 0 0 2px;
+  transition: color .15s;
+}
+.cat-del:hover { color: #b91c1c; }
+.cat-new {
+  display: flex; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.color-options {
+  display: flex; gap: 5px;
+}
+.color-opt {
+  width: 20px; height: 20px;
+  border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; transition: border-color .1s;
+  flex-shrink: 0;
+}
+.color-opt.selected {
+  border-color: #111;
+}
+.cat-input {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; border: 1px solid #e0e0e0;
+  border-radius: 8px; padding: 5px 10px;
+  outline: none; flex: 1; min-width: 120px;
+  transition: border-color .15s;
+}
+.cat-input:focus { border-color: #111; }
+.cat-add-btn {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 700;
+  background: #111; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 6px 12px; cursor: pointer;
+  transition: opacity .15s;
+}
+.cat-add-btn:disabled {
+  opacity: .35; cursor: not-allowed;
 }
