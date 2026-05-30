@@ -1,6 +1,6 @@
 'use client'
 
-import '../app/workshop/[id]/planner.css'
+import '../app/workshop/view/viewer.css'
 import type { CustomCategory, WorkshopRow } from '../lib/types'
 
 type BolkType = 'activity' | 'pause' | 'info' | 'section'
@@ -115,46 +115,99 @@ export default function WorkshopViewer({ workshop }: { workshop: WorkshopRow }) 
   const sectionDurations = computeSectionDurations(bolker)
 
   return (
-    <div className="planner-shell">
-      <div className="topbar">
-        <div className="topbar-left">
-          <h1 className="title">{workshop.title || 'Workshop'}</h1>
-          <div className="sub">{startTime}–{endTime}</div>
-        </div>
-      </div>
+    <div className="viewer-shell">
+      <div className="viewer-app">
+        <p className="viewer-eyebrow">
+          Workshopprogram
+        </p>
+        <h1 className="viewer-title">
+          {workshop.title}
+        </h1>
+        <p className="viewer-time">
+          {startTime} – {endTime}
+        </p>
 
-      <div className="cards">
-        {slots.map((bolk) => {
-          if (bolk.type === 'section') {
+        <div className="viewer-sec-head">
+          <span className="viewer-sec-title">
+            Program
+          </span>
+        </div>
+
+        <div className="viewer-cards">
+          {slots.map((bolk) => {
+            if (bolk.type === 'section') {
+              return (
+                <div key={bolk.id}
+                  className="viewer-card viewer-section">
+                  <div className="viewer-section-inner">
+                    <span className="viewer-section-name">
+                      {bolk.title}
+                    </span>
+                    <span className="viewer-section-duration">
+                      {sectionDurations[bolk.id] || 0} min
+                    </span>
+                  </div>
+                </div>
+              )
+            }
+
+            const categoryStyle = getCategoryStyle(
+              categories, bolk.categoryId
+            )
+            const s = categoryStyle ||
+              TYPE_STYLE[bolk.type] ||
+              TYPE_STYLE.activity
+            const isIndented = !!getParentSection(
+              bolker, bolk.id
+            )
+
             return (
-              <div key={bolk.id} className="card section-card">
-                <div className="section-inner">
-                  <div className="section-name" style={{ pointerEvents: 'none' }}>{bolk.title}</div>
-                  <div className="section-duration">{sectionDurations[bolk.id] || 0} min totalt</div>
+              <div key={bolk.id}
+                className={`viewer-card${isIndented ? ' indented' : ''}`}
+                style={{
+                  background: s.bg,
+                  borderColor: s.border
+                }}>
+                <div className="viewer-card-inner">
+                  <div className="viewer-card-top">
+                    <span className="viewer-time-chip"
+                      style={{
+                        background: s.chip,
+                        color: s.chipText
+                      }}>
+                      {formatTime(bolk.startMin)}
+                    </span>
+                    <span className="viewer-card-title">
+                      {bolk.title}
+                    </span>
+                    <span className="viewer-card-duration">
+                      {bolk.duration} min
+                    </span>
+                  </div>
+                  {bolk.notes && (
+                    <div className="viewer-notes">
+                      {bolk.notes}
+                    </div>
+                  )}
+                </div>
+                <div className="viewer-dur-bar">
+                  <div className="viewer-dur-fill"
+                    style={{
+                      width: `${Math.min(100,
+                        (bolk.duration / 120) * 100
+                      )}%`,
+                      background: s.bar
+                    }} />
                 </div>
               </div>
             )
-          }
+          })}
+        </div>
 
-          const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
-          const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
-          const isIndented = !!getParentSection(bolker, bolk.id)
-          return (
-            <div key={bolk.id} className={`card${isIndented ? ' indented' : ''}`} style={{ background: s.bg, borderColor: s.border }}>
-              <div className="card-inner">
-                <div className="card-top">
-                  <span className="time-chip" style={{ background: s.chip, color: s.chipText }}>{formatTime(bolk.startMin)}</span>
-                  <div className="card-title" style={{ pointerEvents: 'none' }}>{bolk.title}</div>
-                </div>
-                {bolk.notes ? <div className="bolk-notes">{bolk.notes}</div> : null}
-              </div>
-              <div className="dur-bar"><div className="dur-bar-fill" style={{ width: `${Math.min(100, (bolk.duration / 120) * 100)}%`, background: s.bar }} /></div>
-            </div>
-          )
-        })}
+        <p className="viewer-powered">
+          Workshop Agenda
+        </p>
       </div>
-
-      <p className="savehint" style={{ textAlign: 'center', opacity: 0.8 }}>Powered by Workshop Agenda</p>
     </div>
   )
 }
