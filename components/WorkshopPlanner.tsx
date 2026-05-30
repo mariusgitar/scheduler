@@ -318,12 +318,27 @@ function BolkCard({
   const [expanded, setExpanded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [showCategoryManager, setShowCategoryManager] = useState(false)
+  const [editingDuration, setEditingDuration] = useState(false)
+  const [draftDuration, setDraftDuration] = useState('')
   const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
   const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
   const type = bolk.type || 'activity'
 
   function handleAddCategoryFromRow() {
     setShowCategoryManager((v) => !v)
+  }
+
+  function startDurationEdit() {
+    setDraftDuration(String(bolk.duration))
+    setEditingDuration(true)
+  }
+
+  function commitDuration() {
+    const val = parseInt(draftDuration)
+    if (!isNaN(val) && val > 0) {
+      onUpdate(bolk.id, { duration: val })
+    }
+    setEditingDuration(false)
   }
 
   return (
@@ -360,7 +375,22 @@ function BolkCard({
           <div className="card-actions">
             <div className="dur-pill">
               <button className="dur-btn" onClick={() => onUpdate(bolk.id, { duration: Math.max(5, bolk.duration - 5) })}>−</button>
-              <span className="dur-val">{bolk.duration} min</span>
+              {editingDuration ? (
+                <input
+                  type="number"
+                  className="dur-edit"
+                  value={draftDuration}
+                  autoFocus
+                  onChange={(e) => setDraftDuration(e.target.value)}
+                  onBlur={commitDuration}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitDuration()
+                    if (e.key === 'Escape') setEditingDuration(false)
+                  }}
+                />
+              ) : (
+                <span className="dur-val" onClick={startDurationEdit}>{bolk.duration} min</span>
+              )}
               <button className="dur-btn" onClick={() => onUpdate(bolk.id, { duration: bolk.duration + 5 })}>+</button>
             </div>
             <button className="link-btn" onClick={() => setExpanded((v) => !v)}>{expanded ? 'Skjul' : 'Notat'}</button>
