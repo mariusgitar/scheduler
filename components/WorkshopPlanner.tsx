@@ -4,7 +4,7 @@ import '../app/workshop/[id]/planner.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PointerEvent } from 'react'
-import type { BolkType, WorkshopRow } from '../lib/types'
+import type { BolkType, CustomCategory, WorkshopRow } from '../lib/types'
 
 type Bolk = {
   id: string
@@ -18,6 +18,7 @@ type PlannerData = {
   startTime: string
   endTime: string
   bolker: Bolk[]
+  categories: CustomCategory[]
 }
 
 type PlannerState = PlannerData & {
@@ -82,6 +83,12 @@ const TYPES: Array<{ value: BolkType; label: string }> = [
   { value: 'section', label: 'Seksjon' },
 ]
 
+export const PRESET_COLORS = [
+  '#E07A00', '#2563EB', '#15803D',
+  '#7C3AED', '#DB2777', '#0891B2',
+  '#92400E', '#374151'
+]
+
 const TYPE_STYLE: Record<BolkType, { bg: string; border: string; chip: string; chipText: string; bar: string }> = {
   activity: { bg: '#fff', border: '#e8e8e8', chip: '#111', chipText: '#fff', bar: '#111' },
   pause: { bg: '#FFF8EE', border: '#F5D9A8', chip: '#E07A00', chipText: '#fff', bar: '#E07A00' },
@@ -99,6 +106,7 @@ const DEFAULT_DATA: PlannerData = {
     { id: uid(), title: 'Gruppearbeid', duration: 60, notes: '', type: 'activity' },
     { id: uid(), title: 'Oppsummering', duration: 20, notes: '', type: 'info' },
   ],
+  categories: [],
 }
 
 function useDragSort(items: Bolk[], onReorder: (next: Bolk[]) => void) {
@@ -269,6 +277,9 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     startTime: initialData.startTime || DEFAULT_DATA.startTime,
     endTime: initialData.endTime || DEFAULT_DATA.endTime,
     bolker: Array.isArray(initialData.bolker) && initialData.bolker.length > 0 ? (initialData.bolker as Bolk[]) : DEFAULT_DATA.bolker,
+    categories: Array.isArray(initialData.categories)
+      ? initialData.categories
+      : [],
   }))
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [colleagueLabel, setColleagueLabel] = useState('Del med kolleger')
@@ -284,9 +295,10 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         startTime: state.startTime,
         endTime: state.endTime,
         bolker: state.bolker,
+        categories: state.categories,
       },
     }),
-    [state.title, state.startTime, state.endTime, state.bolker]
+    [state.title, state.startTime, state.endTime, state.bolker, state.categories]
   )
 
   useEffect(() => {
