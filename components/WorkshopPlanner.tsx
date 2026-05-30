@@ -191,14 +191,13 @@ function CategoryManager({
   categories,
   onAdd,
   onDelete,
-  initialOpen = false,
+  onClose,
 }: {
   categories: CustomCategory[]
   onAdd: (cat: CustomCategory) => void
   onDelete: (id: string) => void
-  initialOpen?: boolean
+  onClose: () => void
 }) {
-  const [open, setOpen] = useState(initialOpen)
   const [label, setLabel] = useState('')
   const [color, setColor] = useState(PRESET_COLORS[0])
 
@@ -212,48 +211,74 @@ function CategoryManager({
 
   return (
     <div className="cat-manager">
+      <div className="cat-manager-header">
+        <button type="button" className="link-btn" onClick={onClose}>
+          ✕ Lukk
+        </button>
+      </div>
+      {categories.length > 0 && (
+        <div className="cat-list">
+          {categories.map((category) => (
+            <div className="cat-pill" key={category.id}>
+              <span className="cat-dot" style={{ background: category.color }} />
+              <span>{category.label}</span>
+              <button type="button" className="cat-del" aria-label={`Slett ${category.label}`} onClick={() => onDelete(category.id)}>
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="cat-new">
+        <div className="color-options" aria-label="Velg kategorifarge">
+          {PRESET_COLORS.map((preset) => (
+            <button
+              type="button"
+              key={preset}
+              className={`color-opt${color === preset ? ' selected' : ''}`}
+              style={{ background: preset }}
+              aria-label={`Velg farge ${preset}`}
+              onClick={() => setColor(preset)}
+            />
+          ))}
+        </div>
+        <input
+          className="cat-input"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Navn på kategori…"
+        />
+        <button type="button" className="cat-add-btn" disabled={!label.trim()} onClick={handleAdd}>
+          Legg til
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function CategoryManagerToggle({
+  categories,
+  onAdd,
+  onDelete,
+}: {
+  categories: CustomCategory[]
+  onAdd: (cat: CustomCategory) => void
+  onDelete: (id: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="cat-manager-wrapper">
       <button type="button" className="cat-manager-toggle" onClick={() => setOpen((v) => !v)}>
         Kategorier {open ? '▲' : '▼'}
       </button>
       {open && (
-        <div>
-          {categories.length > 0 && (
-            <div className="cat-list">
-              {categories.map((category) => (
-                <div className="cat-pill" key={category.id}>
-                  <span className="cat-dot" style={{ background: category.color }} />
-                  <span>{category.label}</span>
-                  <button type="button" className="cat-del" aria-label={`Slett ${category.label}`} onClick={() => onDelete(category.id)}>
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="cat-new">
-            <div className="color-options" aria-label="Velg kategorifarge">
-              {PRESET_COLORS.map((preset) => (
-                <button
-                  type="button"
-                  key={preset}
-                  className={`color-opt${color === preset ? ' selected' : ''}`}
-                  style={{ background: preset }}
-                  aria-label={`Velg farge ${preset}`}
-                  onClick={() => setColor(preset)}
-                />
-              ))}
-            </div>
-            <input
-              className="cat-input"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Navn på kategori…"
-            />
-            <button type="button" className="cat-add-btn" disabled={!label.trim()} onClick={handleAdd}>
-              Legg til
-            </button>
-          </div>
-        </div>
+        <CategoryManager
+          categories={categories}
+          onAdd={onAdd}
+          onDelete={onDelete}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   )
@@ -286,24 +311,13 @@ function BolkCard({
 }: BolkCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [showInlineCategoryManager, setShowInlineCategoryManager] = useState(false)
+  const [showCategoryManager, setShowCategoryManager] = useState(false)
   const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
   const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
   const type = bolk.type || 'activity'
 
   function handleAddCategoryFromRow() {
-    if (categories.length === 0) {
-      setShowInlineCategoryManager(true)
-      return
-    }
-
-    const cat: CustomCategory = {
-      id: uid(),
-      label: 'Ny kategori',
-      color: PRESET_COLORS[categories.length % PRESET_COLORS.length],
-    }
-    onAddCategory(cat)
-    onUpdate(bolk.id, { type: 'activity', categoryId: cat.id })
+    setShowCategoryManager((v) => !v)
   }
 
   return (
@@ -329,8 +343,13 @@ function BolkCard({
             })}
             <button type="button" className="type-tab" aria-label="Legg til kategori" onClick={handleAddCategoryFromRow}>+</button>
           </div>
-          {showInlineCategoryManager && categories.length === 0 && (
-            <CategoryManager categories={categories} onAdd={onAddCategory} onDelete={onDeleteCategory} initialOpen />
+          {showCategoryManager && (
+            <CategoryManager
+              categories={categories}
+              onAdd={onAddCategory}
+              onDelete={onDeleteCategory}
+              onClose={() => setShowCategoryManager(false)}
+            />
           )}
           <div className="card-actions">
             <div className="dur-pill">
@@ -533,5 +552,5 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManager categories={state.categories} onAdd={addCategory} onDelete={deleteCategory} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} onAdd={addCategory} onDelete={deleteCategory} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
 }
