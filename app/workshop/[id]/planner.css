@@ -53,7 +53,36 @@
 .dur-pill { display: flex; align-items: center; background: rgba(0,0,0,.05); border-radius: 10px; overflow: hidden; }
 .dur-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #888; width: 32px; height: 30px; display: flex; align-items: center; justify-content: center; transition: color .1s, background .1s; }
 .dur-btn:hover { color: #111; background: rgba(0,0,0,.07); }
-.dur-val { font-size: 12px; font-weight: 700; color: #111; padding: 0 2px; min-width: 54px; text-align: center; }
+.dur-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+  min-width: 54px;
+  text-align: center;
+  padding: 0 4px;
+  cursor: pointer;
+  border-bottom: 1px dotted #ccc;
+  transition: border-color .15s;
+}
+.dur-val:hover { border-bottom-color: #111; }
+.dur-edit {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #111;
+  outline: none;
+  width: 40px;
+  min-width: 54px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.dur-edit::-webkit-inner-spin-button,
+.dur-edit::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
 .link-btn { font-size: 12px; font-weight: 600; color: #aaa; background: none; border: none; cursor: pointer; padding: 0; transition: color .15s; white-space: nowrap; }
 .link-btn:hover { color: #111; }
 .del-btn { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.05); border: none; cursor: pointer; color: #bbb; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; flex-shrink: 0; }
