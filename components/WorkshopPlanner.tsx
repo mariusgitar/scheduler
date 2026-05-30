@@ -19,6 +19,7 @@ type PlannerData = {
   endTime: string
   bolker: Bolk[]
   categories: CustomCategory[]
+  visibleTypes: BolkType[]
 }
 
 type PlannerState = PlannerData & {
@@ -90,6 +91,7 @@ const TYPES: Array<{ value: BolkType; label: string }> = [
 ]
 
 const BOLK_TYPES = TYPES.filter((t) => t.value !== 'section')
+const DEFAULT_VISIBLE_TYPES: BolkType[] = ['activity', 'pause', 'info']
 
 export const PRESET_COLORS = [
   '#E07A00', '#2563EB', '#15803D',
@@ -115,6 +117,7 @@ const DEFAULT_DATA: PlannerData = {
     { id: uid(), title: 'Oppsummering', duration: 20, notes: '', type: 'info' },
   ],
   categories: [],
+  visibleTypes: DEFAULT_VISIBLE_TYPES,
 }
 
 function useDragSort(items: Bolk[], onReorder: (next: Bolk[]) => void) {
@@ -195,13 +198,19 @@ function getCategoryStyle(categories: CustomCategory[], categoryId?: string) {
 
 function CategoryManager({
   categories,
+  visibleTypes,
   onAdd,
   onDelete,
+  onHideType,
+  onRestoreTypes,
   onClose,
 }: {
   categories: CustomCategory[]
+  visibleTypes: BolkType[]
   onAdd: (cat: CustomCategory) => void
   onDelete: (id: string) => void
+  onHideType: (type: BolkType) => void
+  onRestoreTypes: () => void
   onClose: () => void
 }) {
   const [label, setLabel] = useState('')
@@ -222,6 +231,22 @@ function CategoryManager({
           ✕ Lukk
         </button>
       </div>
+      <div className="cat-list">
+        {BOLK_TYPES.filter((type) => visibleTypes.includes(type.value)).map((type) => (
+          <div className="cat-pill" key={type.value}>
+            <span className="cat-dot" style={{ background: TYPE_STYLE[type.value].chip }} />
+            <span>{type.label}</span>
+            <button type="button" className="cat-del" aria-label={`Skjul ${type.label}`} onClick={() => onHideType(type.value)}>
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+      {visibleTypes.length < BOLK_TYPES.length && (
+        <button type="button" className="link-btn" onClick={onRestoreTypes}>
+          Vis skjulte typer
+        </button>
+      )}
       {categories.length > 0 && (
         <div className="cat-list">
           {categories.map((category) => (
@@ -264,12 +289,18 @@ function CategoryManager({
 
 function CategoryManagerToggle({
   categories,
+  visibleTypes,
   onAdd,
   onDelete,
+  onHideType,
+  onRestoreTypes,
 }: {
   categories: CustomCategory[]
+  visibleTypes: BolkType[]
   onAdd: (cat: CustomCategory) => void
   onDelete: (id: string) => void
+  onHideType: (type: BolkType) => void
+  onRestoreTypes: () => void
 }) {
   const [open, setOpen] = useState(false)
 
@@ -281,8 +312,11 @@ function CategoryManagerToggle({
       {open && (
         <CategoryManager
           categories={categories}
+          visibleTypes={visibleTypes}
           onAdd={onAdd}
           onDelete={onDelete}
+          onHideType={onHideType}
+          onRestoreTypes={onRestoreTypes}
           onClose={() => setOpen(false)}
         />
       )}
@@ -293,11 +327,14 @@ function CategoryManagerToggle({
 type BolkCardProps = {
   bolk: Bolk & { startMin: number; endMin: number }
   categories: CustomCategory[]
+  visibleTypes: BolkType[]
   isIndented?: boolean
   onUpdate: (id: string, patch: Partial<Bolk>) => void
   onDelete: (id: string) => void
   onAddCategory: (cat: CustomCategory) => void
   onDeleteCategory: (id: string) => void
+  onHideType: (type: BolkType) => void
+  onRestoreTypes: () => void
   isDragging: boolean
   isOver: boolean
   gripProps: ReturnType<typeof useDragSort>['gripProps'] extends (idx: number) => infer R ? R : never
@@ -306,10 +343,13 @@ type BolkCardProps = {
 function BolkCard({
   bolk,
   categories,
+  visibleTypes,
   onUpdate,
   onDelete,
   onAddCategory,
   onDeleteCategory,
+  onHideType,
+  onRestoreTypes,
   isDragging,
   isOver,
   gripProps,
@@ -353,7 +393,7 @@ function BolkCard({
         </div>
         <div className="card-bottom">
           <div className="type-tabs">
-            {BOLK_TYPES.map((t) => {
+            {BOLK_TYPES.filter((t) => visibleTypes.includes(t.value)).map((t) => {
               const active = !bolk.categoryId && type === t.value
               const style = TYPE_STYLE[t.value]
               return <button key={t.value} className={`type-tab${active ? ' active' : ''}`} style={active ? { background: style.chip, color: style.chipText, borderColor: style.chip } : {}} onClick={() => onUpdate(bolk.id, { type: t.value, categoryId: undefined })}>{t.label}</button>
@@ -367,8 +407,11 @@ function BolkCard({
           {showCategoryManager && (
             <CategoryManager
               categories={categories}
+              visibleTypes={visibleTypes}
               onAdd={onAddCategory}
               onDelete={onDeleteCategory}
+              onHideType={onHideType}
+              onRestoreTypes={onRestoreTypes}
               onClose={() => setShowCategoryManager(false)}
             />
           )}
@@ -467,6 +510,9 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     categories: Array.isArray(initialData.categories)
       ? initialData.categories
       : [],
+    visibleTypes: Array.isArray(initialData.visibleTypes)
+      ? (initialData.visibleTypes as BolkType[]).filter((type) => DEFAULT_VISIBLE_TYPES.includes(type))
+      : DEFAULT_DATA.visibleTypes,
   }))
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [colleagueLabel, setColleagueLabel] = useState('Del med kolleger')
@@ -483,9 +529,10 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         endTime: state.endTime,
         bolker: state.bolker,
         categories: state.categories,
+        visibleTypes: state.visibleTypes,
       },
     }),
-    [state.title, state.startTime, state.endTime, state.bolker, state.categories]
+    [state.title, state.startTime, state.endTime, state.bolker, state.categories, state.visibleTypes]
   )
 
   useEffect(() => {
@@ -554,7 +601,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     }
   }
 
-  function handleBackToPrograms() {
+  function handleLogoClick() {
     isNavigating.current = true
     window.location.href = '/'
   }
@@ -578,6 +625,25 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     }))
   }
 
+  function hideType(type: BolkType) {
+    setState((s) => ({
+      ...s,
+      visibleTypes: s.visibleTypes.filter((visibleType) => visibleType !== type),
+      bolker: s.bolker.map((b) =>
+        b.type === type
+          ? { ...b, type: 'activity' }
+          : b
+      ),
+    }))
+  }
+
+  function restoreTypes() {
+    setState((s) => ({
+      ...s,
+      visibleTypes: DEFAULT_VISIBLE_TYPES,
+    }))
+  }
+
   const withSlots = computeSlots(state.bolker, state.startTime)
   const sectionDurations = computeSectionDurations(state.bolker)
   const totalUsed = state.bolker.reduce((sum, b) => sum + b.duration, 0)
@@ -588,5 +654,5 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="back-link" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }} onClick={handleBackToPrograms}>← Alle programmer</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><div className="tag">WORKSHOPPROGRAM</div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} onAdd={addCategory} onDelete={deleteCategory} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="logo-pill" onClick={handleLogoClick}>WORKSHOP AGENDA</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} visibleTypes={state.visibleTypes} onAdd={addCategory} onDelete={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} visibleTypes={state.visibleTypes} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
 }
