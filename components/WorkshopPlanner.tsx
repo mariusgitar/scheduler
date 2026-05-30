@@ -515,12 +515,13 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
       : DEFAULT_DATA.visibleTypes,
   }))
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [colleagueLabel, setColleagueLabel] = useState('Del med kolleger')
-  const [participantLabel, setParticipantLabel] = useState('Del med deltakere')
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
+  const [showToast, setShowToast] = useState(false)
   const initialRender = useRef(true)
   const isNavigating = useRef(false)
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shareTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const shareMenuRef = useRef<HTMLDivElement | null>(null)
   const savePayload = useMemo(
     () => ({
       title: state.title,
@@ -569,36 +570,47 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     return () => clearTimeout(timeout)
   }, [savePayload, workshop.id])
 
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      if (!shareMenuRef.current?.contains(event.target as Node)) {
+        setIsShareMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('click', handleDocumentClick)
+
+    return () => document.removeEventListener('click', handleDocumentClick)
+  }, [])
+
   useEffect(() => () => {
     if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
     if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current)
   }, [])
 
-  async function handleShareColleague() {
+  function showCopiedToast() {
+    setShowToast(true)
+    if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current)
+    shareTimeoutRef.current = setTimeout(() => {
+      setShowToast(false)
+    }, 2000)
+  }
+
+  async function copyShareUrl(url: string) {
+    setIsShareMenuOpen(false)
     try {
-      await navigator.clipboard.writeText(window.location.href)
-      setColleagueLabel('Kopiert!')
-      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current)
-      shareTimeoutRef.current = setTimeout(() => {
-        setColleagueLabel('Del med kolleger')
-      }, 2000)
+      await navigator.clipboard.writeText(url)
+      showCopiedToast()
     } catch {
-      alert(window.location.href)
+      alert(url)
     }
   }
 
+  async function handleShareColleague() {
+    await copyShareUrl(window.location.href)
+  }
+
   async function handleShareParticipant() {
-    const participantUrl = `${window.location.origin}/workshop/view/${workshop.read_token}`
-    try {
-      await navigator.clipboard.writeText(participantUrl)
-      setParticipantLabel('Kopiert!')
-      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current)
-      shareTimeoutRef.current = setTimeout(() => {
-        setParticipantLabel('Del med deltakere')
-      }, 2000)
-    } catch {
-      alert(participantUrl)
-    }
+    await copyShareUrl(`${window.location.origin}/workshop/view/${workshop.read_token}`)
   }
 
   function handleLogoClick() {
@@ -654,5 +666,5 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="logo-pill" onClick={handleLogoClick}>WORKSHOP AGENDA</button><div className="share-btns"><button className={`share-btn${colleagueLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareColleague}>{colleagueLabel}</button><button className={`share-btn${participantLabel === 'Kopiert!' ? ' copied' : ''}`} onClick={handleShareParticipant}>{participantLabel}</button></div></div><input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} visibleTypes={state.visibleTypes} onAdd={addCategory} onDelete={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} visibleTypes={state.visibleTypes} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="top-bar"><button type="button" className="logo-pill" onClick={handleLogoClick}>WORKSHOP AGENDA</button><div className="share-menu-wrapper" ref={shareMenuRef}><button type="button" className="share-icon-btn" aria-label="Del workshop" aria-expanded={isShareMenuOpen} onClick={() => setIsShareMenuOpen((open) => !open)}><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1v10M5 5l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 11v4a1 1 0 001 1h10a1 1 0 001-1v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></button>{isShareMenuOpen && <div className="share-menu"><button type="button" className="share-menu-item" onClick={handleShareColleague}>Del med kolleger</button><button type="button" className="share-menu-item" onClick={handleShareParticipant}>Del med deltakere</button></div>}</div></div>{showToast && <div className="toast">Kopiert!</div>}<input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} visibleTypes={state.visibleTypes} onAdd={addCategory} onDelete={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} visibleTypes={state.visibleTypes} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
 }
