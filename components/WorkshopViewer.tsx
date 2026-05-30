@@ -56,12 +56,18 @@ function getParentSection(bolker: Bolk[], bolkId: string) {
 }
 
 function computeSlots(bolker: Bolk[], startTime: string) {
-  const sectionDurations = computeSectionDurations(bolker)
   let cursor = parseTime(startTime)
   return bolker.map((b) => {
+    if (b.type === 'section') {
+      return {
+        ...b,
+        startMin: cursor,
+        endMin: cursor,
+      }
+    }
+
     const start = cursor
-    const duration = b.type === 'section' ? sectionDurations[b.id] || 0 : b.duration
-    cursor += duration
+    cursor += b.duration
     return { ...b, startMin: start, endMin: cursor }
   })
 }
