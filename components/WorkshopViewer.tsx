@@ -1,7 +1,7 @@
 'use client'
 
 import '../app/workshop/[id]/planner.css'
-import type { WorkshopRow } from '../lib/types'
+import type { CustomCategory, WorkshopRow } from '../lib/types'
 
 type BolkType = 'activity' | 'pause' | 'info' | 'section'
 
@@ -11,12 +11,14 @@ type Bolk = {
   duration: number
   notes: string
   type: BolkType
+  categoryId?: string
 }
 
 type PlannerData = {
   startTime: string
   endTime: string
   bolker: Bolk[]
+  categories: CustomCategory[]
 }
 
 function parseTime(str: string) {
@@ -75,6 +77,20 @@ const DEFAULT_DATA: PlannerData = {
   startTime: '09:00',
   endTime: '15:00',
   bolker: [],
+  categories: [],
+}
+
+function getCategoryStyle(categories: CustomCategory[], categoryId?: string) {
+  const category = categories.find((c) => c.id === categoryId)
+  if (!category) return null
+
+  return {
+    bg: '#fff',
+    border: category.color,
+    chip: category.color,
+    chipText: '#fff',
+    bar: category.color,
+  }
 }
 
 function parseData(raw: unknown): Partial<PlannerData> {
@@ -94,6 +110,7 @@ export default function WorkshopViewer({ workshop }: { workshop: WorkshopRow }) 
   const startTime = initialData.startTime || DEFAULT_DATA.startTime
   const endTime = initialData.endTime || DEFAULT_DATA.endTime
   const bolker = Array.isArray(initialData.bolker) ? (initialData.bolker as Bolk[]) : DEFAULT_DATA.bolker
+  const categories = Array.isArray(initialData.categories) ? initialData.categories : []
   const slots = computeSlots(bolker, startTime)
   const sectionDurations = computeSectionDurations(bolker)
 
@@ -119,7 +136,8 @@ export default function WorkshopViewer({ workshop }: { workshop: WorkshopRow }) 
             )
           }
 
-          const s = TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
+          const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
+          const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
           const isIndented = !!getParentSection(bolker, bolk.id)
           return (
             <div key={bolk.id} className={`card${isIndented ? ' indented' : ''}`} style={{ background: s.bg, borderColor: s.border }}>
