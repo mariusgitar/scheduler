@@ -21,6 +21,7 @@ type PlannerData = {
   bolker: Bolk[]
   categories: CustomCategory[]
   visibleTypes: BolkType[]
+  workshopNotes: string
 }
 
 type PlannerState = PlannerData & {
@@ -119,6 +120,7 @@ const DEFAULT_DATA: PlannerData = {
   ],
   categories: [],
   visibleTypes: DEFAULT_VISIBLE_TYPES,
+  workshopNotes: '',
 }
 
 function useDragSort(items: Bolk[], onReorder: (next: Bolk[]) => void) {
@@ -514,10 +516,12 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     visibleTypes: Array.isArray(initialData.visibleTypes)
       ? (initialData.visibleTypes as BolkType[]).filter((type) => DEFAULT_VISIBLE_TYPES.includes(type))
       : DEFAULT_DATA.visibleTypes,
+    workshopNotes: typeof initialData.workshopNotes === 'string' ? initialData.workshopNotes : '',
   }))
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const initialRender = useRef(true)
   const isNavigating = useRef(false)
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -532,9 +536,10 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         bolker: state.bolker,
         categories: state.categories,
         visibleTypes: state.visibleTypes,
+        workshopNotes: state.workshopNotes,
       },
     }),
-    [state.title, state.startTime, state.endTime, state.bolker, state.categories, state.visibleTypes]
+    [state.title, state.startTime, state.endTime, state.bolker, state.categories, state.visibleTypes, state.workshopNotes]
   )
 
   useEffect(() => {
@@ -667,5 +672,61 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
 
   const { dragIdx, overIdx, gripProps, setRef } = useDragSort(state.bolker, (bolker) => setState((s) => ({ ...s, bolker })))
 
-  return <div className="shell"><div className="app"><main><div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>{saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}</div><div className="home-header"><div><button type="button" className="home-tag" onClick={handleLogoClick}>Workshop Agenda</button></div><div className="share-menu-wrapper" ref={shareMenuRef}><button type="button" className="share-icon-btn" aria-label="Del workshop" aria-expanded={isShareMenuOpen} onClick={() => setIsShareMenuOpen((open) => !open)}><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1v10M5 5l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 11v4a1 1 0 001 1h10a1 1 0 001-1v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></button>{isShareMenuOpen && <div className="share-menu"><button type="button" className="share-menu-item" onClick={handleShareColleague}>Del med kolleger</button><button type="button" className="share-menu-item" onClick={handleShareParticipant}>Del med deltakere</button></div>}</div></div>{showToast && <div className="toast">Kopiert!</div>}<input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" /><div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>{totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}<CategoryManagerToggle categories={state.categories} visibleTypes={state.visibleTypes} onAdd={addCategory} onDelete={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} /><div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div><div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} visibleTypes={state.visibleTypes} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div><div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div><div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div></main></div></div>
+  return (
+    <div className="shell">
+      <div className="app">
+        <main>
+          <div className={`save-status${saveStatus === 'error' ? ' error' : ''}`}>
+            {saveStatus === 'saving' ? 'Lagrer…' : saveStatus === 'saved' ? 'Lagret' : saveStatus === 'error' ? 'Feil ved lagring' : ''}
+          </div>
+          <div className="home-header">
+            <div><button type="button" className="home-tag" onClick={handleLogoClick}>Workshop Agenda</button></div>
+            <div className="share-menu-wrapper" ref={shareMenuRef}>
+              <button type="button" className="share-icon-btn" aria-label="Del workshop" aria-expanded={isShareMenuOpen} onClick={() => setIsShareMenuOpen((open) => !open)}>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1v10M5 5l4-4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 11v4a1 1 0 001 1h10a1 1 0 001-1v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              </button>
+              {isShareMenuOpen && <div className="share-menu"><button type="button" className="share-menu-item" onClick={handleShareColleague}>Del med kolleger</button><button type="button" className="share-menu-item" onClick={handleShareParticipant}>Del med deltakere</button></div>}
+            </div>
+          </div>
+          {showToast && <div className="toast">Kopiert!</div>}
+          <input className="title-input" value={state.title} onChange={(e) => setState((s) => ({ ...s, title: e.target.value }))} placeholder="Navn på workshop…" />
+          <div className="time-card"><div className="time-card-label">Tidsramme</div><div className="time-fields"><div className="tf"><span className="tf-label">Start</span><input type="time" className="tf-input" value={state.startTime} onChange={(e) => setState((s) => ({ ...s, startTime: e.target.value }))} /></div><span className="tf-sep">→</span><div className="tf"><span className="tf-label">Slutt</span><input type="time" className="tf-input" value={state.endTime} onChange={(e) => setState((s) => ({ ...s, endTime: e.target.value }))} /></div></div></div>
+          {totalAvail > 0 && <div className="status-row"><div className="prog-wrap"><div className={`prog-label ${overflow ? 'err' : diff === 0 ? 'ok' : ''}`}>{overflow ? `${diff} min over tidsrammen` : diff === 0 ? 'Fyller tidsrammen' : `${diff} min ledig`}</div><div className="prog-track"><div className="prog-fill" style={{ width: `${pct}%`, background: overflow ? '#b91c1c' : '#111' }} /></div></div><div className="prog-time">{totalUsed}<span>/{totalAvail}m</span></div></div>}
+          <CategoryManagerToggle categories={state.categories} visibleTypes={state.visibleTypes} onAdd={addCategory} onDelete={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} />
+          <div className="sec-head"><span className="sec-title">Program</span><span className="sec-count">{state.bolker.length} bolker</span></div>
+          <div className="cards">{withSlots.map((bolk, idx) => { const parentSectionId = getParentSection(state.bolker, bolk.id); const isIndented = bolk.type !== 'section' && !!parentSectionId; return <div key={bolk.id} ref={(el) => setRef(el, idx)} >{bolk.type === 'section' ? <SectionCard bolk={bolk} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => b.id === id ? { ...b, ...patch, duration: 0, type: 'section', categoryId: undefined } : b) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} totalDuration={sectionDurations[bolk.id] || 0} /> : <BolkCard bolk={bolk} categories={state.categories} visibleTypes={state.visibleTypes} onAddCategory={addCategory} onDeleteCategory={deleteCategory} onHideType={hideType} onRestoreTypes={restoreTypes} onUpdate={(id: string, patch: Partial<Bolk>) => setState((s) => ({ ...s, bolker: s.bolker.map((b) => { if (b.id !== id) return b; const next = { ...b, ...patch }; return next.type === 'section' ? { ...next, duration: 0, categoryId: undefined } : next }) }))} onDelete={(id: string) => setState((s) => ({ ...s, bolker: s.bolker.filter((b) => b.id !== id) }))} isDragging={dragIdx === idx} isOver={overIdx === idx && dragIdx !== idx} gripProps={gripProps(idx)} isIndented={isIndented} />}</div>})}</div>
+          <div className="add-btns"><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 30, notes: '', type: 'activity' }] }))}>+ Legg til bolk</button><button className="add-btn" onClick={() => setState((s) => ({ ...s, bolker: [...s.bolker, { id: uid(), title: '', duration: 0, notes: '', type: 'section' }] }))}>+ Legg til seksjon</button></div>
+          <div className="footer"><button className="reset-btn" onClick={() => { if (confirm('Nullstille programmet?')) setState({ ...DEFAULT_DATA, title: workshop.title }) }}>Nullstill</button></div>
+        </main>
+      </div>
+
+      <button type="button" className={`notes-fab${notesOpen ? ' active' : ''}`} onClick={() => setNotesOpen((open) => !open)} aria-label="Åpne workshopnotater" aria-expanded={notesOpen}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 13.5V15h1.5l8.25-8.25-1.5-1.5L3 13.5zM14.78 4.72a1 1 0 000-1.41l-1.09-1.09a1 1 0 00-1.41 0l-1.06 1.06 2.5 2.5 1.06-1.06z" fill="currentColor"/>
+        </svg>
+        {state.workshopNotes && (
+          <span className="notes-fab-dot" />
+        )}
+      </button>
+      {notesOpen && (
+        <div className="notes-overlay" onClick={() => setNotesOpen(false)} />
+      )}
+      <div className={`notes-drawer${notesOpen ? ' open' : ''}`}>
+        <div className="notes-drawer-header">
+          <span className="notes-drawer-title">Workshopnotater</span>
+          <button className="notes-drawer-close" onClick={() => setNotesOpen(false)}>✕</button>
+        </div>
+        <textarea
+          className="notes-drawer-textarea"
+          value={state.workshopNotes}
+          onChange={(e) => setState((s) => ({
+            ...s,
+            workshopNotes: e.target.value,
+          }))}
+          placeholder="Spørsmål, påminnelser og andre notater til workshopen…"
+          rows={8}
+        />
+      </div>
+    </div>
+  )
 }
