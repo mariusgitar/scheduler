@@ -1,3 +1,4 @@
+import Script from 'next/script'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import './home.css'
@@ -14,6 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="no">
+      <head>
+        <Script
+          src="https://umami-analytics-seven-zeta.vercel.app/script.js"
+          data-website-id="9961c0d7-6fed-4dae-b977-730ba59bece8"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className={plusJakartaSans.className}><SessionProviderWrapper>{children}</SessionProviderWrapper></body>
     </html>
   );
