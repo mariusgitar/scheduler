@@ -41,13 +41,25 @@ export async function GET(_: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   const session = await auth()
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
-  }
+  const userId = session?.user?.id
 
   if (!uuidPattern.test(params.id)) {
     return NextResponse.json({ error: 'Ugyldig id' }, { status: 400 })
+  }
+
+  const workshopRows = await sql<Pick<WorkshopRow, 'owner_id'>>(
+    'SELECT owner_id FROM workshops WHERE id = $1',
+    [params.id]
+  )
+
+  const workshop = workshopRows[0]
+
+  if (!workshop) {
+    return NextResponse.json({ error: 'Ikke funnet' }, { status: 404 })
+  }
+
+  if (workshop.owner_id !== null && (!userId || userId !== workshop.owner_id)) {
+    return NextResponse.json({ error: 'Ikke funnet' }, { status: 404 })
   }
 
   const body = (await request.json()) as UpdateWorkshopBody

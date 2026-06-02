@@ -48,7 +48,17 @@ export default async function Page({ searchParams }: PageProps) {
           {userId ? <CreateButton /> : null}
         </header>
 
-        <AuthButton />
+        {!userId ? (
+          <div className="home-guest-actions">
+            <CreateButton
+              buttonLabel="Prøv uten konto"
+              buttonClassName="home-guest-create-button"
+            />
+            <AuthButton signInLabel="Logg inn" />
+          </div>
+        ) : (
+          <AuthButton />
+        )}
         {showAccessDenied ? (
           <p className="home-empty">
             Du har ikke tilgang til Workshop Agenda. Ta kontakt med administrator.

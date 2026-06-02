@@ -1,3 +1,4 @@
+import { auth } from '@/auth'
 import { notFound } from 'next/navigation'
 import { sql } from '../../../lib/db'
 import type { WorkshopRow } from '../../../lib/types'
@@ -27,6 +28,15 @@ export default async function WorkshopPage({ params }: PageProps) {
 
   if (!workshop) {
     notFound()
+  }
+
+  const session = await auth()
+  const userId = session?.user?.id
+
+  if (workshop.owner_id !== null) {
+    if (!userId || userId !== workshop.owner_id) {
+      notFound()
+    }
   }
 
   return <WorkshopPlanner workshop={workshop} />

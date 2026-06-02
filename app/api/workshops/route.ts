@@ -39,16 +39,12 @@ export async function POST(request: Request) {
     const session = await auth()
     const userId = session?.user?.id
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
-    }
-
     const body = (await request.json()) as CreateWorkshopBody
     const title = typeof body?.title === 'string' && body.title.trim() ? body.title.trim() : 'Workshop'
 
     const rows = await sql<WorkshopRow>(
       'INSERT INTO workshops (title, data, owner_id) VALUES ($1, $2::jsonb, $3) RETURNING *',
-      [title, JSON.stringify(defaultWorkshopData), userId]
+      [title, JSON.stringify(defaultWorkshopData), userId ?? null]
     )
 
     return NextResponse.json(rows[0], { status: 201 })

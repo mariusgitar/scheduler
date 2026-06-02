@@ -2,14 +2,18 @@
 
 import { signIn, signOut, useSession } from 'next-auth/react'
 
-export default function AuthButton() {
+type AuthButtonProps = {
+  signInLabel?: string
+}
+
+export default function AuthButton({ signInLabel = 'Logg inn med Google' }: AuthButtonProps) {
   const { data: session } = useSession()
 
   if (!session?.user) {
     return (
       <div className="auth-bar">
         <button className="signin-btn" onClick={() => signIn('google')}>
-          Logg inn med Google
+          {signInLabel}
         </button>
       </div>
     )
