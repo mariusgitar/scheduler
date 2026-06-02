@@ -274,3 +274,91 @@
 .home-guest-actions .auth-bar {
   margin-bottom: 0;
 }
+
+.preview-wrap {
+  margin-top: 40px;
+  opacity: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 12px;
+}
+
+.preview-time-row {
+  font-size: 13px;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 16px;
+  letter-spacing: .02em;
+  transition: color .2s;
+}
+
+.preview-time-row.updating {
+  color: #111;
+}
+
+.preview-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .4s ease,
+    transform .4s ease,
+    border-color .2s ease;
+}
+
+.preview-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.preview-card.updating {
+  border-color: #111;
+}
+
+.preview-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+
+.preview-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  flex: 1;
+}
+
+.preview-dur {
+  font-size: 12px;
+  font-weight: 500;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.preview-dur.updating {
+  color: #111;
+  transition: color .2s;
+}
