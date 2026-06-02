@@ -25,10 +25,17 @@ function getBolkCount(data: object) {
   return Array.isArray(workshopData.bolker) ? workshopData.bolker.length : 0
 }
 
-export default async function Page() {
+type PageProps = {
+  searchParams?: {
+    error?: string
+  }
+}
+
+export default async function Page({ searchParams }: PageProps) {
   const session = await auth()
   const userId = session?.user?.id
   const workshops = userId ? await getWorkshops(userId) : []
+  const showAccessDenied = searchParams?.error === 'AccessDenied'
 
   return (
     <main className="home-shell">
@@ -42,6 +49,11 @@ export default async function Page() {
         </header>
 
         <AuthButton />
+        {showAccessDenied ? (
+          <p className="home-empty">
+            Du har ikke tilgang til Workshop Agenda. Ta kontakt med administrator.
+          </p>
+        ) : null}
 
         {!userId ? null : workshops.length === 0 ? (
           <p className="home-empty">Ingen programmer ennå</p>
