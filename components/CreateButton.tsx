@@ -6,7 +6,15 @@ type CreateWorkshopResponse = {
   id: string
 }
 
-export default function CreateButton() {
+type CreateButtonProps = {
+  buttonLabel?: string
+  buttonClassName?: string
+}
+
+export default function CreateButton({
+  buttonLabel = '+',
+  buttonClassName = 'home-create-button',
+}: CreateButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [titleInput, setTitleInput] = useState('')
@@ -75,8 +83,8 @@ export default function CreateButton() {
           </button>
         </form>
       ) : (
-        <button type="button" onClick={handleOpenForm} className="home-create-button">
-          +
+        <button type="button" onClick={handleOpenForm} className={buttonClassName}>
+          {buttonLabel}
         </button>
       )}
       {errorMessage ? <p>{errorMessage}</p> : null}
