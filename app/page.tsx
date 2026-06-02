@@ -3,6 +3,7 @@ import CreateButton from '../components/CreateButton'
 import DeleteButton from '../components/DeleteButton'
 import { sql } from '../lib/db'
 import AuthButton from '../components/AuthButton'
+import AgendaPreview from '../components/AgendaPreview'
 import type { WorkshopRow } from '../lib/types'
 import { auth } from '@/auth'
 
@@ -49,13 +50,16 @@ export default async function Page({ searchParams }: PageProps) {
         </header>
 
         {!userId ? (
-          <div className="home-guest-actions">
-            <CreateButton
-              buttonLabel="Prøv uten konto"
-              buttonClassName="home-guest-create-button"
-            />
-            <AuthButton signInLabel="Logg inn" />
-          </div>
+          <>
+            <div className="home-guest-actions">
+              <CreateButton
+                buttonLabel="Prøv uten konto"
+                buttonClassName="home-guest-create-button"
+              />
+              <AuthButton signInLabel="Logg inn" />
+            </div>
+            <AgendaPreview />
+          </>
         ) : (
           <AuthButton />
         )}
