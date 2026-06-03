@@ -2,6 +2,7 @@
 
 import '../app/home.css'
 import '../app/workshop/[id]/planner.css'
+import { marked } from 'marked'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import type { BolkType, CustomCategory, WorkshopRow } from '../lib/types'
@@ -522,11 +523,13 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const initialRender = useRef(true)
   const isNavigating = useRef(false)
   const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shareTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shareMenuRef = useRef<HTMLDivElement | null>(null)
+  const notesRef = useRef<HTMLTextAreaElement>(null)
   const savePayload = useMemo(
     () => ({
       title: state.title,
@@ -541,6 +544,23 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     }),
     [state.title, state.startTime, state.endTime, state.bolker, state.categories, state.visibleTypes, state.workshopNotes]
   )
+  const renderedNotes = marked.parse(
+    state.workshopNotes || ''
+  ) as string
+
+  useEffect(() => {
+    if (notesRef.current) {
+      notesRef.current.style.height = 'auto'
+      notesRef.current.style.height =
+        notesRef.current.scrollHeight + 'px'
+    }
+  }, [state.workshopNotes])
+
+  useEffect(() => {
+    if (notesOpen) {
+      setIsEditing(!state.workshopNotes)
+    }
+  }, [notesOpen])
 
   useEffect(() => {
     if (initialRender.current) {
@@ -716,16 +736,39 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
           <span className="notes-drawer-title">Workshopnotater</span>
           <button className="notes-drawer-close" onClick={() => setNotesOpen(false)}>✕</button>
         </div>
-        <textarea
-          className="notes-drawer-textarea"
-          value={state.workshopNotes}
-          onChange={(e) => setState((s) => ({
-            ...s,
-            workshopNotes: e.target.value,
-          }))}
-          placeholder="Spørsmål, påminnelser og andre notater til workshopen…"
-          rows={8}
-        />
+        {isEditing ? (
+          <>
+            <textarea
+              ref={notesRef}
+              className="notes-drawer-textarea"
+              value={state.workshopNotes}
+              onChange={(e) => setState((s) => ({
+                ...s,
+                workshopNotes: e.target.value,
+              }))}
+              onFocus={() => setIsEditing(true)}
+              onBlur={() => setIsEditing(false)}
+              placeholder="Spørsmål, påminnelser og andre notater til workshopen…"
+              autoFocus
+            />
+            <div className="notes-hint">**fet** _kursiv_ - liste</div>
+          </>
+        ) : state.workshopNotes ? (
+          <div
+            className="notes-rendered"
+            onClick={() => setIsEditing(true)}
+            dangerouslySetInnerHTML={{
+              __html: renderedNotes
+            }}
+          />
+        ) : (
+          <div
+            className="notes-rendered notes-rendered-placeholder"
+            onClick={() => setIsEditing(true)}
+          >
+            Trykk for å legge til notater…
+          </div>
+        )}
       </div>
     </div>
   )
