@@ -4,6 +4,7 @@ import '../app/home.css'
 import '../app/workshop/[id]/planner.css'
 import { marked } from 'marked'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type React from 'react'
 import type { PointerEvent } from 'react'
 import type { BolkType, CustomCategory, WorkshopRow } from '../lib/types'
 
@@ -365,18 +366,9 @@ function BolkCard({
   const [editingDuration, setEditingDuration] = useState(false)
   const [draftDuration, setDraftDuration] = useState('')
   const [isEditingNotes, setIsEditingNotes] = useState(false)
-  const bolkNotesRef = useRef<HTMLTextAreaElement>(null)
   const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
   const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
   const type = bolk.type || 'activity'
-
-  useEffect(() => {
-    if (bolkNotesRef.current) {
-      bolkNotesRef.current.style.height = 'auto'
-      bolkNotesRef.current.style.height =
-        bolkNotesRef.current.scrollHeight + 'px'
-    }
-  }, [bolk.notes])
 
   function handleAddCategoryFromRow() {
     setShowCategoryManager((v) => !v)
@@ -393,6 +385,14 @@ function BolkCard({
       onUpdate(bolk.id, { duration: val })
     }
     setEditingDuration(false)
+  }
+
+  function autoResize(
+    e: React.FormEvent<HTMLTextAreaElement>
+  ) {
+    const el = e.currentTarget
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
   }
 
   return (
@@ -464,19 +464,26 @@ function BolkCard({
           isEditingNotes ? (
             <div>
               <textarea
-                ref={bolkNotesRef}
                 className="bolk-notes"
                 value={bolk.notes}
                 onChange={(e) => onUpdate(
                   bolk.id, { notes: e.target.value }
                 )}
+                onInput={autoResize}
                 placeholder="Notater…"
-                onBlur={() => setIsEditingNotes(false)}
                 autoFocus
               />
-              <p className="bolk-notes-hint">
-                **fet** _kursiv_ - liste
-              </p>
+              <div className="bolk-notes-toolbar">
+                <span className="bolk-notes-hint">
+                  **fet** _kursiv_ - liste
+                </span>
+                <button
+                  className="bolk-notes-done"
+                  onClick={() => setIsEditingNotes(false)}
+                >
+                  Ferdig
+                </button>
+              </div>
             </div>
           ) : bolk.notes ? (
             <div
