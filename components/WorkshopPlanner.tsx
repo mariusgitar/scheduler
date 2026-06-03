@@ -574,6 +574,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
+  const [notesFullscreen, setNotesFullscreen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const initialRender = useRef(true)
   const isNavigating = useRef(false)
@@ -600,12 +601,12 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
   ) as string
 
   useEffect(() => {
-    if (notesRef.current) {
+    if (notesRef.current && !notesFullscreen) {
       notesRef.current.style.height = 'auto'
       notesRef.current.style.height =
         notesRef.current.scrollHeight + 'px'
     }
-  }, [state.workshopNotes])
+  }, [state.workshopNotes, notesFullscreen])
 
   useEffect(() => {
     if (notesOpen) {
@@ -694,6 +695,19 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
     isNavigating.current = true
     window.location.href = '/'
   }
+  function closeNotes() {
+    setNotesOpen(false)
+    setNotesFullscreen(false)
+  }
+
+  function autoResizeNotes(
+    e: React.FormEvent<HTMLTextAreaElement>
+  ) {
+    const el = e.currentTarget
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
 
   function addCategory(cat: CustomCategory) {
     setState((s) => ({
@@ -771,7 +785,7 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         </main>
       </div>
 
-      <button type="button" className={`notes-fab${notesOpen ? ' active' : ''}`} onClick={() => setNotesOpen((open) => !open)} aria-label="Åpne workshopnotater" aria-expanded={notesOpen}>
+      <button type="button" className={`notes-fab${notesOpen ? ' active' : ''}`} onClick={() => notesOpen ? closeNotes() : setNotesOpen(true)} aria-label="Åpne workshopnotater" aria-expanded={notesOpen}>
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 13.5V15h1.5l8.25-8.25-1.5-1.5L3 13.5zM14.78 4.72a1 1 0 000-1.41l-1.09-1.09a1 1 0 00-1.41 0l-1.06 1.06 2.5 2.5 1.06-1.06z" fill="currentColor"/>
         </svg>
@@ -780,12 +794,29 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
         )}
       </button>
       {notesOpen && (
-        <div className="notes-overlay" onClick={() => setNotesOpen(false)} />
+        <div className="notes-overlay" onClick={closeNotes} />
       )}
-      <div className={`notes-drawer${notesOpen ? ' open' : ''}`}>
+      <div className={`notes-drawer${notesOpen ? ' open' : ''}${notesFullscreen ? ' fullscreen' : ''}`}>
         <div className="notes-drawer-header">
           <span className="notes-drawer-title">Workshopnotater</span>
-          <button className="notes-drawer-close" onClick={() => setNotesOpen(false)}>✕</button>
+          <div className="notes-drawer-actions">
+            <button
+              className="notes-action-btn"
+              onClick={() => setNotesFullscreen((v) => !v)}
+              aria-label="Fullskjerm"
+            >
+              {notesFullscreen ? (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M5 1H1v4M9 1h4v4M5 13H1V9M9 13h4V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1 5V1h4M9 1h4v4M1 9v4h4M13 9v4H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+            <button className="notes-drawer-close" onClick={closeNotes}>✕</button>
+          </div>
         </div>
         {isEditing ? (
           <>
@@ -799,6 +830,10 @@ export default function WorkshopPlanner({ workshop }: { workshop: WorkshopRow })
               }))}
               onFocus={() => setIsEditing(true)}
               onBlur={() => setIsEditing(false)}
+              onInput={notesFullscreen
+                ? undefined : autoResizeNotes}
+              style={{ overflowY: notesFullscreen
+                ? 'auto' : 'hidden' }}
               placeholder="Spørsmål, påminnelser og andre notater til workshopen…"
               autoFocus
             />
