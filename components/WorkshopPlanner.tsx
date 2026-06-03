@@ -364,9 +364,19 @@ function BolkCard({
   const [showCategoryManager, setShowCategoryManager] = useState(false)
   const [editingDuration, setEditingDuration] = useState(false)
   const [draftDuration, setDraftDuration] = useState('')
+  const [isEditingNotes, setIsEditingNotes] = useState(false)
+  const bolkNotesRef = useRef<HTMLTextAreaElement>(null)
   const categoryStyle = getCategoryStyle(categories, bolk.categoryId)
   const s = categoryStyle || TYPE_STYLE[bolk.type] || TYPE_STYLE.activity
   const type = bolk.type || 'activity'
+
+  useEffect(() => {
+    if (bolkNotesRef.current) {
+      bolkNotesRef.current.style.height = 'auto'
+      bolkNotesRef.current.style.height =
+        bolkNotesRef.current.scrollHeight + 'px'
+    }
+  }, [bolk.notes])
 
   function handleAddCategoryFromRow() {
     setShowCategoryManager((v) => !v)
@@ -450,7 +460,41 @@ function BolkCard({
             )}
           </div>
         </div>
-        {expanded && <textarea className="bolk-notes" value={bolk.notes} onChange={(e) => onUpdate(bolk.id, { notes: e.target.value })} placeholder="Notater om bolken…" rows={3} />}
+        {expanded && (
+          isEditingNotes ? (
+            <div>
+              <textarea
+                ref={bolkNotesRef}
+                className="bolk-notes"
+                value={bolk.notes}
+                onChange={(e) => onUpdate(
+                  bolk.id, { notes: e.target.value }
+                )}
+                placeholder="Notater…"
+                onBlur={() => setIsEditingNotes(false)}
+                autoFocus
+              />
+              <p className="bolk-notes-hint">
+                **fet** _kursiv_ - liste
+              </p>
+            </div>
+          ) : bolk.notes ? (
+            <div
+              className="bolk-notes-rendered"
+              onClick={() => setIsEditingNotes(true)}
+              dangerouslySetInnerHTML={{
+                __html: marked.parse(bolk.notes) as string
+              }}
+            />
+          ) : (
+            <p
+              className="bolk-notes-placeholder"
+              onClick={() => setIsEditingNotes(true)}
+            >
+              Legg til notater…
+            </p>
+          )
+        )}
       </div>
       <div className="dur-bar"><div className="dur-bar-fill" style={{ width: `${Math.min(100, (bolk.duration / 120) * 100)}%`, background: s.bar }} /></div>
     </div>

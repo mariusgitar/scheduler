@@ -105,8 +105,42 @@
 .del-yes:hover { background: #991b1b; }
 .del-no { background: #f0f0f0; color: #555; }
 .del-no:hover { background: #e0e0e0; }
-.bolk-notes { margin-top: 10px; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; line-height: 1.6; color: #555; border: none; border-top: 1px solid rgba(0,0,0,.07); background: transparent; padding: 10px 0 2px; resize: vertical; outline: none; user-select: text; }
+.bolk-notes { margin-top: 10px; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; line-height: 1.6; color: #555; border: none; border-top: 1px solid rgba(0,0,0,.07); background: transparent; padding: 10px 0 2px; resize: none; overflow: hidden; min-height: 48px; transition: height .1s ease; outline: none; user-select: text; }
 .bolk-notes::placeholder { color: #ccc; }
+.bolk-notes-rendered {
+  font-size: 13px; line-height: 1.6;
+  color: #555; cursor: text;
+  padding: 10px 0 2px;
+  border-top: 1px solid rgba(0,0,0,.07);
+}
+.bolk-notes-rendered p {
+  margin-bottom: 6px;
+}
+.bolk-notes-rendered p:last-child {
+  margin-bottom: 0;
+}
+.bolk-notes-rendered strong {
+  font-weight: 700; color: #333;
+}
+.bolk-notes-rendered em {
+  font-style: italic;
+}
+.bolk-notes-rendered ul {
+  padding-left: 16px; margin-bottom: 6px;
+}
+.bolk-notes-rendered li {
+  margin-bottom: 3px;
+}
+.bolk-notes-placeholder {
+  font-size: 13px; color: #ccc;
+  font-style: italic; cursor: text;
+  padding: 10px 0 2px;
+  border-top: 1px solid rgba(0,0,0,.07);
+}
+.bolk-notes-hint {
+  font-size: 10px; color: #ccc;
+  margin-top: 4px; letter-spacing: .02em;
+}
 .dur-bar { height: 3px; background: rgba(0,0,0,.06); }
 .dur-bar-fill { height: 100%; transition: width .3s; border-radius: 0 2px 2px 0; }
 .add-btn { width: 100%; padding: 15px; background: #fff; border: 2px dashed #ddd; border-radius: 16px; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: #bbb; transition: all .2s; }
