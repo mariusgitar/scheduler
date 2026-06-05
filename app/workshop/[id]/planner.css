@@ -93,7 +93,7 @@
 .dur-edit::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
-.link-btn { font-size: 12px; font-weight: 600; color: #aaa; background: none; border: none; cursor: pointer; padding: 0; transition: color .15s; white-space: nowrap; }
+.link-btn { font-size: 12px; font-weight: 600; color: #aaa; background: none; border: none; cursor: pointer; padding: 8px 4px; min-height: 36px; display: flex; align-items: center; transition: color .15s; white-space: nowrap; }
 .link-btn:hover { color: #111; }
 .del-btn { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.05); border: none; cursor: pointer; color: #bbb; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; flex-shrink: 0; }
 .del-btn:hover { background: #ffe8e8; color: #b91c1c; }
@@ -105,11 +105,12 @@
 .del-yes:hover { background: #991b1b; }
 .del-no { background: #f0f0f0; color: #555; }
 .del-no:hover { background: #e0e0e0; }
-.bolk-notes { margin-top: 10px; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; line-height: 1.6; color: #555; border: none; border-top: 1px solid rgba(0,0,0,.07); background: transparent; padding: 10px 0 2px; resize: none; overflow: hidden; min-height: 48px; outline: none; user-select: text; }
+.bolk-notes { margin-top: 10px; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; line-height: 1.6; color: #555; border: none; border-top: 1px solid rgba(0,0,0,.07); background: transparent; padding: 10px 0 2px; resize: none; overflow: hidden; min-height: 48px; outline: none; user-select: text; touch-action: auto; -webkit-overflow-scrolling: touch; }
 .bolk-notes::placeholder { color: #ccc; }
 .bolk-notes-rendered {
-  font-size: 13px; line-height: 1.6;
+  font-size: 15px; line-height: 1.6;
   color: #555; cursor: text;
+  touch-action: auto;
   padding: 10px 0 2px;
   border-top: 1px solid rgba(0,0,0,.07);
 }
@@ -190,7 +191,7 @@
   overflow: hidden;
 }
 .section-name {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -330,6 +331,7 @@
   height: 50vh;
   display: flex;
   flex-direction: column;
+  touch-action: pan-y;
 }
 .notes-drawer.open {
   transform: translateY(0);
@@ -372,13 +374,15 @@
 .notes-drawer-close:hover { color: #111; }
 .notes-drawer-textarea {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px; line-height: 1.6;
+  font-size: 16px; line-height: 1.6;
   color: #111; background: transparent;
   border: none; outline: none;
   flex: 1;
   overflow-y: auto;
   resize: none;
   padding-bottom: 40px;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   min-height: 120px;
   transition: height .1s ease;
 }
